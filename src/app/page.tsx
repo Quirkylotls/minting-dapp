@@ -1,101 +1,154 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import Image from "next/image"
+import { ConnectButton, MediaRenderer, TransactionButton, useActiveAccount, useReadContract } from "thirdweb/react"
+import { thirdwebClient as client } from "./client"
+import { getContract } from "thirdweb";
+import { ethereum } from "thirdweb/chains";
+import { getContractMetadata } from "thirdweb/extensions/common";
+import { useEffect } from "react";
+import { claimTo } from "thirdweb/extensions/erc721";
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+export default function NFTClaimPage() {
+  const account = useActiveAccount();
+
+
+  const contract = getContract({
+    client: client,
+    chain: ethereum,
+    address: process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || ''
+  });
+
+  const { data: contractMetadata, isLoading, error } = useReadContract(
+    getContractMetadata,
+    {
+      contract: contract
+    }
   );
+
+  useEffect(() => {
+    if (error) {
+      console.error("Contract error:", error);
+    }
+    if (contractMetadata) {
+      console.log("Contract metadata:", contractMetadata);
+    }
+  }, [error, contractMetadata]);
+
+  return (
+    <div className="min-h-screen relative">
+      <div className="gradient-container">
+        <div className="gradient-bg" />
+      </div>
+      <div className="container px-4 py-6 mx-auto content-container text-white relative z-10">
+        {/* Main Action Button */}
+        <div className="flex justify-end mb-8">
+          <ConnectButton client={client} />
+        </div>
+
+        {/* Hero Section - Now centered */}
+        <div className="flex flex-col items-center mb-12 space-y-6 text-center">
+          <div className="relative aspect-square w-full max-w-md rounded-lg overflow-hidden hover:scale-105 transition-transform duration-300">
+            {contractMetadata?.image ? (
+              <MediaRenderer
+                client={client}
+                src={contractMetadata.image}
+                width="400"
+                height="400"
+                style={{
+                  borderRadius: "10px",
+                  border: "1px solid #fff",
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                }}
+              />
+            ) : (
+              <Image
+                src="/quirkylotl.png"
+                alt="Quirkylotl NFT Preview"
+                className="object-cover"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                loading="lazy"
+              />
+            )}
+          </div>
+          <div className="text-center space-y-6 max-w-2xl">
+            <h1 className="text-4xl font-bubble animate-bounce sm:text-5xl bg-gradient-to-r from-pink-400 via-purple-500 to-indigo-400 text-transparent bg-clip-text hover:from-indigo-400 hover:via-purple-500 hover:to-pink-400 transition-all duration-1000">
+              Quirkylotl NFT
+            </h1>
+            <p className="text-black text-lg animate-fadeIn">
+              "Become a proud member of the Quirkylotl family by claiming your very own unique axolotl NFT. Dive into an extraordinary underwater world and unlock exclusive perks as part of our vibrant community!"
+            </p>
+            {/* <Button 
+              size="lg" 
+              className="relative animate-none bg-gradient-to-r from-purple-500 to-pink-500 
+                hover:from-pink-500 hover:to-purple-500 transition-all duration-300
+                border-2 border-transparent hover:border-white
+                before:absolute before:inset-0 before:bg-gradient-to-r 
+                before:from-purple-400 before:via-pink-500 before:to-purple-400 
+                before:animate-glow before:blur-xl before:opacity-75 before:-z-10"
+            >
+              Claim NFT
+            </Button> */}
+            <TransactionButton
+              transaction={() => claimTo({
+                contract: contract,
+                to: account?.address as string,
+                quantity: BigInt(1),
+              })}
+              onTransactionConfirmed={async() => alert("Transaction confirmed")}
+            >
+              Claim 1 NFT
+            </TransactionButton>
+          </div>
+        </div>
+
+        {/* Creator Info - Centered */}
+        <Card className="mb-12 max-w-3xl mx-auto backdrop-blur-sm bg-white/10">
+          <CardContent className="p-6 text-center">
+            <h2 className="text-2xl font-bubble mb-4 text-black">About Dr. Quirkylotl</h2>
+            <p className="text-black">
+              Greetings, fellow adventurers! I'm Dr. Quirkylotl, the quirky mind behind the Quirkylotls NFT project. Inspired by the whimsical charm of axolotls and a love for fostering creativity, I've crafted this unique collection to bring joy, community, and exclusive perks to collectors around the globe.  
+
+              With a passion for blending art, fun, and utility, I aim to create more than just an NFT project — it's an ever-evolving underwater world where imagination thrives and connections flourish.  
+
+              Join me, Dr. Quirkylotl, on this exciting journey, and let's make waves together!
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Features and Benefits - Already grid-centered */}
+        <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
+          {[
+            {
+              title: "Exclusive Access",
+              description: "Get VIP access to upcoming events and private community channels."
+            },
+            {
+              title: "Holder Rewards",
+              description: "Earn special rewards and tokens just for holding the NFT."
+            },
+            {
+              title: "Community Perks",
+              description: "Join an exclusive community of collectors and creators."
+            }
+          ].map((feature, index) => (
+            <Card key={index} className="transform hover:scale-105 transition-transform duration-300 backdrop-blur-sm bg-white/10">
+              <CardContent className="p-6 space-y-2 text-center">
+                <h3 className="text-xl font-bubble text-black">{feature.title}</h3>
+                <p className="text-black">
+                  {feature.description}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
 }
+
